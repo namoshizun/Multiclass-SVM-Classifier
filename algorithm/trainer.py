@@ -11,6 +11,14 @@ from sklearn.metrics import accuracy_score
 num_cpus = multiprocessing.cpu_count()
 
 
+def make_svm_unit(params):
+    _id, pair, X, Y, config, mailbox = params['_id'], params['pair'], params['X'], params['Y'], params['config'], params['mailbox']
+    unit = SVMUnit(pair, X, Y, config)
+    fpath = os.path.join('./tmp', str(_id) + '.pkl')
+    with open(fpath, 'wb') as f: pickle.dump(unit, f)
+    mailbox.put(fpath)
+
+
 class SVMUnit:
     def __init__(self, pair, X, Y, config):
         self.pair = pair
@@ -25,48 +33,12 @@ class SVMUnit:
         vfunc = np.vectorize(lambda kls: self.class_lookup[kls])
         return vfunc(Y)
 
-
-class SVMWorker(multiprocessing.Process):
-    def __init__(self, taskQueue, reportSucc, reportFailed):
-        super(SVMWorker, self).__init__()
-        self.taskQueue = taskQueue
-        self.reportSucc = reportSucc
-        self.reportFailed = reportFailed
-
-    def run(self):
-        while True:
-            try:
-                _id, pair, X, Y, config = self.taskQueue.get(timeout=0.01)
-                print('Training on pair {}'.format(pair))
-                unit = SVMUnit(pair, X, Y, config)
-
-                # due to the queue size limit, the svm units need to be dumped to a local folder
-                fpath = os.path.join('./tmp', str(_id) + '.pkl')
-                with open(fpath, 'wb') as f: pickle.dump(unit, f)
-                self.reportSucc.put(fpath)
-            except queue.Empty:
-                break
-            except Exception:
-                self.reportFailed.put('Job {} failed'.format(_id))
-
-
 class Trainer:
     def __init__(self, data, config):
         self.data = data
         self.config = config
         self.svm_units = []
         self.evaluator = ClassifierEvaluator
-
-    def make_task_queues(self, data, pairs, num):
-        """
-        Create SVM task queues, each queue contains the training asset for a SVM worker
-        """
-        queues = [multiprocessing.Queue() for _ in range(num)]
-        for idx, pair in enumerate(pairs):
-            qidx = idx % num
-            subset = data.loc[list(pair)]
-            queues[qidx].put([idx, pair, subset.values, subset.index.values, self.config])
-        return queues
 
     @setup_tmp
     @timing
@@ -75,6 +47,20 @@ class Trainer:
         Train a multi-class SVM classifier by creating many One-vs-One SVM units.
         Parallelise the training of units for optimising the performance
         """
+        def create_packets(pairs, mailbox):
+            ret = []
+            for idx, p in enumerate(pairs):
+                subset = data.loc[list(p)]
+                ret.append({
+                    '_id': idx,
+                    'pair': p,
+                    'X': subset.values,
+                    'Y': subset.index.values,
+                    'config': self.config,
+                    'mailbox': mailbox
+                })
+            return ret
+
         if data is None:
             data = self.data
 
@@ -85,45 +71,24 @@ class Trainer:
 
         # create worker processes
         num_workers = min(num_cpus, len(pairs))
-        reportSucc, reportFailed = multiprocessing.Queue(), multiprocessing.Queue()
-        taskQueues = self.make_task_queues(data, pairs, num_workers)
-        processes = [SVMWorker(taskQueues[i], reportSucc, reportFailed) for i in range(num_workers)]
+        pool = multiprocessing.Pool(num_workers)
+        pmanager = multiprocessing.Manager()
+        mailbox = pmanager.Queue()
 
         # workers starting training many One-vs-One SVM classifiers
-        list(map(lambda p: p.start(), processes))
-        list(map(lambda p: p.join(), processes))
-
+        pool.map(make_svm_unit, create_packets(pairs, mailbox))
         # each time a worker returns the pickle path to the trained SVM unit
         while True:
             try:
-                fpath = reportSucc.get(timeout=0.05)
+                fpath = mailbox.get(timeout=0.05)
                 with open(fpath, 'rb') as f:
                     self.svm_units.append(pickle.load(f))
             except queue.Empty:
                 break
 
-        # any bad news?
-        while True:
-            try:
-                failure = reportFailed.get(timeout=0.05)
-                print(failure)
-            except queue.Empty:
-                break
+        pool.close()
+        pool.join()
         print('done')
-
-    # @timing
-    # def split_validate(self, schedule=(0.9,)):
-    #     for train_size in schedule:
-    #         X, Y = self.data.ix[:, :-1].values, self.transform_y(self.data['labels'].values)
-    #         X_train, X_test, Y_train, Y_test = train_test_split(X, Y,
-    #                                                             train_size=train_size)
-    #
-    #         predictions = SVM(**self.config).fit(X_train, Y_train).predict(X_test)
-    #         print('TrainingDataSize = {}, Accuracy: {}'
-    #               .format(train_size, accuracy_score(Y_test, predictions)))
-    #
-    #     return self
-    #
 
     @timing
     def cross_validate(self, data=None, num_folds=10):
@@ -145,10 +110,9 @@ class Trainer:
             self.train(training_data)
             accuracy = accuracy_score(self.predict(test_data.values), test_data.index.values)
             self.svm_units = []
-
+            
             print(accuracy)
 
-        # TODO
         return self
 
     def predict(self, X):
