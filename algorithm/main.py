@@ -47,9 +47,9 @@ if __name__ == '__main__':
 
     # HAVE FUN!
     trainer = Trainer(training_data, config)
-
-    trainer.train()
-    # trainer.train().predict(test.values)
+    trainer.cross_validate()
+    # trainer.train()
+    # predict(test.values)
 
     # trainer.split_validate()
     # trainer.cross_validate()

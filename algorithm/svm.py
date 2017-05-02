@@ -1,9 +1,12 @@
 from util import linear
 from cvxopt import matrix as cvmat
-from cvxopt.solvers import qp
+from cvxopt.solvers import qp, options
 from util import kernel_function
 import numpy as np
 import pickle
+
+options['show_progress'] = False  # less verbose
+
 
 class HyperplanSeparator:
     def __init__(self, X, Y, K, alphas, min_lagmult, kernel):
@@ -91,8 +94,6 @@ class SVM:
         # build the SVM separator that uses only the support vectors
         # whose lagrange multiplier value is greater than the treshold
         self.hyper_separator = HyperplanSeparator(X, Y, K, alphas, **self.__config)
-
-        pickle.dump(self, open('./hehe.pkl', 'wb'))
         return self
 
     def predict(self, X):

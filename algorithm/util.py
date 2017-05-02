@@ -5,6 +5,9 @@ import os, time, shutil
 ##################
 # MISC Utilities #
 ##################
+def chunkify(lst, n):
+    return [lst[i::n] for i in range(n)]
+
 def setup_tmp(f):
     def handler(*args):
         tmp_dump = './tmp'
@@ -89,7 +92,6 @@ def make_training_data(training_path, labels_path):
     # nice and clean
     data = data.join(labels)
     data.set_index(['labels'], inplace=True)
-    # data['labels'] = labels['labels']  # dont use me for assignment data!
 
     return data
 
