@@ -1,10 +1,22 @@
 import pandas as pd
 import numpy as np
-import os, time
+import os, time, shutil
 
 ##################
 # MISC Utilities #
 ##################
+def setup_tmp(f):
+    def handler(*args):
+        tmp_dump = './tmp'
+        if not os.path.exists(tmp_dump):
+            os.mkdir(tmp_dump)
+        ret = f(*args)
+        if os.path.exists(tmp_dump):
+            shutil.rmtree(tmp_dump, ignore_errors=True)
+        return ret
+    return handler
+
+
 def timing(f):
     def timmer(*args):
         start = time.time()
@@ -75,7 +87,9 @@ def make_training_data(training_path, labels_path):
     assert(len(data) == len(labels))
 
     # nice and clean
-    data = data.join(labels)  # USE ME INSTEAD !!!!!!!!
-    # data['labels'] = labels['labels']
+    data = data.join(labels)
+    data.set_index(['labels'], inplace=True)
+    # data['labels'] = labels['labels']  # dont use me for assignment data!
+
     return data
 

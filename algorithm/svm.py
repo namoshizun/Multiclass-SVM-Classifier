@@ -3,10 +3,9 @@ from cvxopt import matrix as cvmat
 from cvxopt.solvers import qp
 from util import kernel_function
 import numpy as np
-
+import pickle
 
 class HyperplanSeparator:
-
     def __init__(self, X, Y, K, alphas, min_lagmult, kernel):
         """
         Representation of the hyperplan separator/predicator
@@ -26,6 +25,8 @@ class HyperplanSeparator:
         self.bias = np.mean(sv_Y - np.sum(self.partial_weight * K[sv_selector][:, sv_selector], axis=1))
 
     def predict(self, X):
+        if X[0] is not np.ndarray:
+            X = [X]
         results = [np.sum(self.partial_weight * self.kernel(x, self.sv_X.T)) for x in X]
         return self.bias + results
 
@@ -90,6 +91,8 @@ class SVM:
         # build the SVM separator that uses only the support vectors
         # whose lagrange multiplier value is greater than the treshold
         self.hyper_separator = HyperplanSeparator(X, Y, K, alphas, **self.__config)
+
+        pickle.dump(self, open('./hehe.pkl', 'wb'))
         return self
 
     def predict(self, X):

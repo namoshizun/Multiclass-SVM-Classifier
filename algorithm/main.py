@@ -3,9 +3,10 @@ import pandas as pd
 from util import build_dataframe, make_training_data, feature_selection
 from trainer import Trainer
 
+
 def read_small_data():
-    source = '../input-dev/subset_2kls.csv'
-    return pd.read_csv(source, index_col=None), None
+    source = '../input-dev/subset_5kls.csv'
+    return pd.read_csv(source, index_col=0), None
 
 
 def read_full_data():
@@ -20,6 +21,7 @@ def read_full_data():
 
     return training_data, test
 
+
 def read_mock_data():
     training_data = '../input-dev/mock_training.csv'
     training_labels = '../input-dev/mock_training_labels.csv'
@@ -31,12 +33,6 @@ def read_mock_data():
     return training_data, test
 
 if __name__ == '__main__':
-    # training_data = '../input/training_data.csv'
-    # training_labels = '../input/training_labels.csv'
-    # test_data = '../input/test_data.csv'
-
-    # DATA SOURCE
-
     # RECEIVE CONFIG
     parser = argparse.ArgumentParser(description='SVM Classifier')
     parser.add_argument('kernel', nargs='?', type=str, default='linear', help='The kernel function to use')
@@ -44,13 +40,17 @@ if __name__ == '__main__':
     parser.add_argument('min_lagmult', nargs='?', type=float, default=1e-5,
                         help='The support vector\'s minimum lagrange multipliers value')
     config = vars(parser.parse_args())
+
     # training_data, test = read_mock_data()
+    # training_data, test = read_full_data()
     training_data, test = read_small_data()
 
     # HAVE FUN!
     trainer = Trainer(training_data, config)
+
+    trainer.train()
     # trainer.train().predict(test.values)
 
-    trainer.split_validate()
+    # trainer.split_validate()
     # trainer.cross_validate()
 
