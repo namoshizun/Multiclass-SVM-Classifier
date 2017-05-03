@@ -1,10 +1,14 @@
-import numpy as np
-import itertools, queue, pickle, os
-import multiprocessing
+from __future__ import print_function
+from __future__ import division
+from Queue import Empty
 from collections import Counter
 from util import timing, setup_tmp, chunkify
 from svm import SVM
 from evaluator import ClassifierEvaluator
+import numpy as np
+import itertools, os
+import multiprocessing
+import cPickle as pickle
 
 num_cpus = multiprocessing.cpu_count()
 
@@ -65,7 +69,7 @@ class Trainer:
         # get all one-vs-one pairs
         classes = np.unique(data.index.values)
         pairs = list(itertools.combinations_with_replacement(classes, 2))
-        pairs = list(filter(lambda p: p[0] != p[1], pairs))
+        pairs = filter(lambda p: p[0] != p[1], pairs)
 
         # create worker processes
         num_workers = min(num_cpus, len(pairs))
@@ -81,7 +85,7 @@ class Trainer:
                 fpath = mailbox.get(timeout=0.05)
                 with open(fpath, 'rb') as f:
                     self.svm_units.append(pickle.load(f))
-            except queue.Empty:
+            except Empty:
                 break
 
         pool.close()
