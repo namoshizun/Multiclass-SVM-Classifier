@@ -5,8 +5,6 @@ from collections import Counter
 from util import timing, setup_tmp, chunkify
 from svm import SVM
 from evaluator import ClassifierEvaluator
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 
 num_cpus = multiprocessing.cpu_count()
 
@@ -94,9 +92,10 @@ class Trainer:
     def cross_validate(self, data=None, num_folds=10):
         if data is None:
             data = self.data
-        num_folds = min(len(data), num_folds)
 
+        num_folds = min(len(data), num_folds)
         folds_idx = chunkify(list(range(len(data))), num_folds)
+        folds_accuracy = []
 
         tmp = set(list(range(num_folds)))
         for i in tmp:
@@ -108,11 +107,13 @@ class Trainer:
             test_data = data.iloc[folds_idx[i]]
 
             self.train(training_data)
-            accuracy = accuracy_score(self.predict(test_data.values), test_data.index.values)
+            accuracy = self.evaluator.accuracy_score(self.predict(test_data.values), test_data.index.values)
             self.svm_units = []
             
             print(accuracy)
+            folds_accuracy.append(accuracy)
 
+        print('Mean Accuracy : {}'.format(np.mean(folds_accuracy)))
         return self
 
     def predict(self, X):
