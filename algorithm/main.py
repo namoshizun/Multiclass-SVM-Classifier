@@ -15,9 +15,8 @@ def read_full_data():
     test_data = '../input/test_data.csv'
 
     training_data = make_training_data(training_data, training_labels)
-    feature_selection(training_data)
-
     test = build_dataframe(test_data)
+    feature_selection(training_data)
 
     return training_data, test
 
@@ -43,8 +42,8 @@ if __name__ == '__main__':
     config = vars(parser.parse_args())
 
     # training_data, test = read_mock_data()
-    # training_data, test = read_full_data()
-    training_data, test = read_small_data()
+    training_data, test = read_full_data()
+    # training_data, test = read_small_data()
 
     # HAVE FUN!
     trainer = Trainer(training_data, config)

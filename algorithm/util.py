@@ -2,6 +2,8 @@ import itertools
 import pandas as pd
 import numpy as np
 import os, time, shutil
+from collections import Counter, defaultdict
+from numba import jit
 
 ##################
 # MISC Utilities #
@@ -68,18 +70,61 @@ def poly(degree=3, offset=1e0):
 #################################
 # Data pre-processing utilities #
 #################################
-def feature_selection(training_dataframe):
+def read_selected_features(path):
+    with open(path, 'r') as source:
+        return source.read().splitlines()
+
+
+@timing
+def compute_info_gains(training_dataframe):
+    def entropy(vals):
+        if len(vals) == 0:
+            return 0.0
+        # preprocessing - convert nonimal to numeral so the efficient bincount can be used
+        cnt = Counter(vals)
+        for i, k in enumerate(cnt.keys()):
+            cnt[k] = i
+        trans = np.vectorize(lambda kls: cnt[kls])(vals)
+        # begin
+        x = np.atleast_2d(trans)
+        nrows, ncols = x.shape
+        nbins = x.max() + 1
+        counts = np.vstack((np.bincount(row, minlength=nbins) for row in x))
+        p = counts / float(ncols)
+        # compute Shannon entropy in bits
+        return -np.sum(p * np.log2(p), axis=1)[0]
+
+    features = training_dataframe.columns
+    kls_entropy = entropy(training_dataframe.index.values)
+    N = len(training_dataframe)
+    word_ig = {}
+
+    for word in features:
+        selector = training_dataframe[word] > 0
+        w_docs =  [i for i, ok in selector.iteritems() if ok]
+        nw_docs =  [i for i, ok in selector.iteritems() if not ok]
+        F_w = selector.sum() / N
+        word_ig[word] = kls_entropy - F_w * entropy(w_docs) - (1 - F_w) * entropy(nw_docs)
+
+    return word_ig
+
+
+def feature_selection(training_dataframe, min_ig=0.015, use_cached=False):
+    """
+    Compute information gain to remove redundant features.
+    Reference: [A survey of text classification algorithms](www.time.mk/trajkovski/thesis/text-class.pdf)
+    """
     # # remove unused features
-    features = training_dataframe.columns[:-1]
-    selected_features = read_selected_features('./selected_features.txt')  # TODO
+    features = training_dataframe.columns
+    if use_cached:
+        selected_features = read_selected_features('./selected_features.txt')  # TODO
+    else:
+        features_ig = compute_info_gains(training_dataframe)
+        selected_features = [ft for ft, ig in features_ig.items() if ig >= min_ig]
 
     redundant_features = list(set(features) - set(selected_features))
     training_dataframe.drop(redundant_features, axis=1, inplace=True)
 
-
-def read_selected_features(path):
-    with open(path, 'r') as source:
-        return source.read().splitlines()
 
 
 def build_dataframe(source):
