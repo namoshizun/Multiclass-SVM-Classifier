@@ -13,6 +13,7 @@ num_cpus = multiprocessing.cpu_count()
 
 def make_svm_unit(params):
     _id, pair, X, Y, config, mailbox = params['_id'], params['pair'], params['X'], params['Y'], params['config'], params['mailbox']
+    print(pair)
     unit = SVMUnit(pair, X, Y, config)
     fpath = os.path.join('./tmp', str(_id) + '.pkl')
     with open(fpath, 'wb') as f: pickle.dump(unit, f)
