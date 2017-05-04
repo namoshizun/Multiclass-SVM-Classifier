@@ -1,3 +1,4 @@
+import itertools
 import pandas as pd
 import numpy as np
 import os, time, shutil
@@ -5,8 +6,23 @@ import os, time, shutil
 ##################
 # MISC Utilities #
 ##################
+def one_vs_one_pairs(lst):
+    primitive_pairs =  list(itertools.combinations(lst, 2))
+    return [([p[0]], [p[1]]) for p in primitive_pairs]
+
+
+def one_vs_rest_pairs(lst):
+    if len(lst) <= 2:
+        return [([lst[0]], [lst[1]])]
+    if type(lst) is not list:
+        lst = list(lst)
+
+    return [([e], lst[:i] + lst[i + 1:]) for i, e in enumerate(lst)]
+
+
 def chunkify(lst, n):
     return [lst[i::n] for i in range(n)]
+
 
 def setup_tmp(f):
     def handler(*args):
@@ -28,6 +44,7 @@ def timing(f):
         print('%s function took %0.3f s' % (f.__name__, (finish-start)))
         return ret
     return timmer
+
 
 ####################
 # Kernel Utilities #

@@ -34,10 +34,11 @@ class HyperplanSeparator:
         return self.bias + results
 
 class SVM:
-    def __init__(self, kernel, C, min_lagmult):
+    def __init__(self, kernel, C, min_lagmult, strategy):
         self.kernel = kernel_function(kernel)
         self.C = C
         self.min_lagmult = min_lagmult
+        self.strategy = strategy
         self.hyper_separator = None
 
     @property
@@ -97,4 +98,11 @@ class SVM:
         return self
 
     def predict(self, X):
-        return np.sign(self.hyper_separator.predict(X))
+        """
+        One-vs-One: return the actual 1 or -1 class
+        One-vs-Rest: return the value of decision function directly
+        """
+        if self.strategy == 'one_vs_one':
+            return np.sign(self.hyper_separator.predict(X))
+        if self.strategy == 'one_vs_rest':
+            return self.hyper_separator.predict(X)
