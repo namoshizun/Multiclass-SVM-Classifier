@@ -1,8 +1,12 @@
+from __future__ import print_function
+from __future__ import division
 import numpy as np
-import itertools, queue, pickle, os
+import itertools, queue, os
+import cPickle as pickle
 import multiprocessing
 import util
 from collections import Counter
+from Queue import Empty
 from svm import SVM
 from evaluator import ClassifierEvaluator
 from util import timing, setup_tmp, chunkify, one_vs_one_pairs, one_vs_rest_pairs
@@ -13,11 +17,8 @@ num_cpus = multiprocessing.cpu_count()
 
 def make_svm_unit(params):
     _id, pair, X, Y, config, mailbox = params['_id'], params['pair'], params['X'], params['Y'], params['config'], params['mailbox']
-    print(pair)
     unit = SVMUnit(pair, X, Y, config)
-    fpath = os.path.join('./tmp', str(_id) + '.pkl')
-    with open(fpath, 'wb') as f: pickle.dump(unit, f)
-    mailbox.put(fpath)
+    mailbox.put(unit)
 
 
 class SVMUnit:
@@ -88,10 +89,9 @@ class Trainer:
         # each time a worker returns the pickle path to the trained SVM unit
         while True:
             try:
-                fpath = mailbox.get(timeout=0.05)
-                with open(fpath, 'rb') as f:
-                    self.svm_units.append(pickle.load(f))
-            except queue.Empty:
+                unit = mailbox.get(timeout=0.05)
+                self.svm_units.append(unit)
+            except Empty:
                 break
 
         pool.close()
@@ -104,10 +104,10 @@ class Trainer:
             data = self.data
 
         num_folds = min(len(data), num_folds)
-        folds_idx = chunkify(list(range(len(data))), num_folds)
+        folds_idx = chunkify(range(len(data)), num_folds)
         folds_accuracy = []
 
-        tmp = set(list(range(num_folds)))
+        tmp = set(range(num_folds))
         for i in tmp:
             print('Fold {}'.format(i))
             other_folds = list(tmp - set([i]))
