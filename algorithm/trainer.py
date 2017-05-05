@@ -12,7 +12,7 @@ from evaluator import ClassifierEvaluator
 from util import timing, setup_tmp, chunkify, one_vs_one_pairs, one_vs_rest_pairs
 
 
-num_cpus = multiprocessing.cpu_count()
+num_cpus = multiprocessing.cpu_count() - 1
 
 
 def make_svm_unit(params):
@@ -28,12 +28,14 @@ class SVMUnit:
         self.strategy = config['strategy']
         self.svm = SVM(**config).fit(X, self.transform_y(Y))
 
-    def lookup_prediction(self, pred):
+    def lookup_predictions(self, preds):
         if self.strategy == 'one_vs_one':
-            return self.prediction_lookup[pred][0]
+            vfunc = np.vectorize(lambda val: self.prediction_lookup[val][0])
+            return vfunc(preds)
 
         if self.strategy == 'one_vs_rest':
-            return self.prediction_lookup[1.][0]
+            vfunc = np.vectorize(lambda val: self.prediction_lookup[1.][0])
+            return vfunc(preds)
 
     def transform_y(self, Y):
         """
@@ -115,6 +117,7 @@ class Trainer:
 
             training_data = data.iloc[other_folds_pos]
             test_data = data.iloc[folds_idx[i]]
+            return training_data, test_data
 
             self.train(training_data)
             accuracy = self.evaluator.accuracy_score(self.predict(test_data.values), test_data.index.values)
@@ -127,25 +130,25 @@ class Trainer:
         return self
 
     def __one_vs_one_predict__(self, X):
-        predictions = []
-        for x in X:
-            counter = Counter()
-            for unit in self.svm_units:
-                pred = unit.svm.predict([x])[0]
-                vote = unit.lookup_prediction(pred)
-                counter[vote] += 1
-            predictions.append(counter.most_common(1)[0][0])
-
-        return predictions
+        unit_preds = []
+        n = len(X)
+        for unit in self.svm_units:
+            pred = unit.lookup_predictions(unit.svm.predict(X))
+            unit_preds.append(pred)
+        unit_preds = np.array(unit_preds)
+        return [Counter(unit_preds[:, i]).most_common(1)[0][0] for i in range(n)]
 
     def __one_vs_rest_predict__(self, X):
+        n = len(X)
+        unit_margins = np.array([unit.svm.predict(X) for unit in self.svm_units])
+        idx_max = [np.argmax(unit_margins[:, i]) for i in range(n)]
         predictions = []
-        for x in X:
-            margins = [unit.svm.predict([x])[0] for unit in self.svm_units]
-            idx_max = np.argmax(margins)
-            predictions.append(self.svm_units[idx_max].lookup_prediction(margins[idx_max]))
-        return predictions
 
+        for i in range(n):
+            best = idx_max[i]
+            predictions.append(str(self.svm_units[best].lookup_predictions(unit_margins[best, i])))
+        
+        return predictions
 
     def predict(self, X):
         """

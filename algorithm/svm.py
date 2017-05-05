@@ -28,7 +28,7 @@ class HyperplanSeparator:
         self.bias = np.mean(sv_Y - np.sum(self.partial_weight * K[sv_selector][:, sv_selector], axis=1))
 
     def predict(self, X):
-        if X[0] is not np.ndarray:
+        if type(X[0]) is not np.ndarray:
             X = [X]
         results = [np.sum(self.partial_weight * self.kernel(x, self.sv_X.T)) for x in X]
         return self.bias + results
