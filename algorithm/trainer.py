@@ -1,7 +1,7 @@
 from __future__ import print_function
 from __future__ import division
 import numpy as np
-import itertools, queue, os
+import itertools, os
 import cPickle as pickle
 import multiprocessing
 import util
@@ -12,7 +12,7 @@ from evaluator import ClassifierEvaluator
 from util import timing, setup_tmp, chunkify, one_vs_one_pairs, one_vs_rest_pairs
 
 
-num_cpus = multiprocessing.cpu_count() - 1
+num_cpus = int(multiprocessing.cpu_count() / 2 )
 
 
 def make_svm_unit(params):
@@ -117,7 +117,6 @@ class Trainer:
 
             training_data = data.iloc[other_folds_pos]
             test_data = data.iloc[folds_idx[i]]
-            return training_data, test_data
 
             self.train(training_data)
             accuracy = self.evaluator.accuracy_score(self.predict(test_data.values), test_data.index.values)
