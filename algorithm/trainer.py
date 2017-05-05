@@ -8,7 +8,7 @@ from evaluator import ClassifierEvaluator
 from util import timing, setup_tmp, chunkify, one_vs_one_pairs, one_vs_rest_pairs
 
 
-num_cpus = multiprocessing.cpu_count() - 1
+num_cpus = multiprocessing.cpu_count()
 
 
 def make_svm_unit(params):
@@ -116,7 +116,6 @@ class Trainer:
 
             training_data = data.iloc[other_folds_pos]
             test_data = data.iloc[folds_idx[i]]
-            return training_data, test_data
 
             self.train(training_data)
             accuracy = self.evaluator.accuracy_score(self.predict(test_data.values), test_data.index.values)
