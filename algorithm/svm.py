@@ -1,9 +1,7 @@
-from util import linear
 from cvxopt import matrix as cvmat
 from cvxopt.solvers import qp, options
 from util import kernel_function
 import numpy as np
-import pickle
 
 options['show_progress'] = False  # less verbose
 
@@ -12,6 +10,8 @@ class HyperplanSeparator:
     def __init__(self, X, Y, K, alphas, min_lagmult, kernel):
         """
         Representation of the hyperplan separator/predicator
+        Reference: http://www.cs.cmu.edu/~guestrin/Class/10701-S07/Slides/kernels.pdf
+
         :param alphas: all Lagrange multipliers
         :param min_lagmult: support vector's minimum Lagrange multiplier value
         :param kernel: kernel function
@@ -22,8 +22,7 @@ class HyperplanSeparator:
         self.sv_X = X[sv_selector]
         self.kernel = kernel
 
-        # compute bias and weight according to : # http://www.cs.cmu.edu/~guestrin/Class/10701-S07/Slides/kernels.pdf
-        # partial weight is a computation cache which can be used to compute weights
+        # partial weight is a computation cache used to compute actual weights
         self.partial_weight = sv_alphas * sv_Y
         self.bias = np.mean(sv_Y - np.sum(self.partial_weight * K[sv_selector][:, sv_selector], axis=1))
 
@@ -32,6 +31,7 @@ class HyperplanSeparator:
             X = [X]
         results = [np.sum(self.partial_weight * self.kernel(x, self.sv_X.T)) for x in X]
         return self.bias + results
+
 
 class SVM:
     def __init__(self, kernel, C, min_lagmult, strategy):
@@ -71,7 +71,7 @@ class SVM:
         n_samples, n_features = X.shape
         n_ones = np.ones(n_samples)
 
-        # optimisation problem terms
+        # optimisation terms
         K = kernel(X, X.T)
         P = cvmat(np.outer(Y, Y) * K)
         q = cvmat(n_ones * -1.)

@@ -1,11 +1,11 @@
 import numpy as np
-import itertools, queue, pickle, os
+import queue, pickle, os
 import multiprocessing
 import util
 from collections import Counter
 from svm import SVM
 from confusion_matrix import ConfusionMatrix
-from util import timing, setup_tmp, one_vs_one_pairs, one_vs_rest_pairs
+from util import timing, setup_tmp
 from util import folds_indexes, accuracy_score
 
 
@@ -13,6 +13,11 @@ num_cpus = multiprocessing.cpu_count()
 
 
 def make_svm_unit(params):
+    """
+    Worker function that trains a SVM unit:
+    SVM params are dumped to a temporary pickle file and the worker informs
+    its master process where the pickle is.
+    """
     _id, pair, X, Y, config, mailbox = params['_id'], params['pair'], params['X'], params['Y'], params['config'], params['mailbox']
     unit = SVMUnit(pair, X, Y, config)
     fpath = os.path.join('./tmp', str(_id) + '.pkl')
@@ -21,6 +26,11 @@ def make_svm_unit(params):
 
 
 class SVMUnit:
+    """
+    Represents a SVM unit in a multiclass SVM classifier.
+    Using one-vs-one implementation strategy, each unit classifies a pair of classes.
+    Using one-vs-rest implementation strategy, each unit classifies a class and all the other classes.
+    """
     def __init__(self, pair, X, Y, config):
         self.class_lookup = dict({kls: 1. for kls in pair[0]}, **{kls: -1. for kls in pair[1]})
         self.prediction_lookup = {1. : pair[0], -1. : pair[1] }
@@ -28,6 +38,10 @@ class SVMUnit:
         self.svm = SVM(**config).fit(X, self.transform_y(Y))
 
     def lookup_predictions(self, preds):
+        """
+        :param preds: an array of 1. or -1. SVM predictions
+        :return: corresponding classes of 1 or -1.
+        """
         if self.strategy == 'one_vs_one':
             vfunc = np.vectorize(lambda val: self.prediction_lookup[val][0])
             return vfunc(preds)
@@ -53,8 +67,8 @@ class Trainer:
     @timing
     def train(self, data=None):
         """
-        Train a multi-class SVM classifier by creating many One-vs-One SVM units.
-        Parallelise the training of units for optimising the performance
+        Train a multi-class SVM classifier by creating many One-vs-N SVM units.
+        Parallelise the training for optimising the performance
         """
         def create_packets(pairs, mailbox):
             ret = []
@@ -73,7 +87,7 @@ class Trainer:
         if data is None:
             data = self.data
 
-        # get all one-vs-one pairs
+        # get all one-vs-N pairs
         classes = np.unique(data.index.values)
         pairs = getattr(util, self.config['strategy'] + '_pairs')(classes)
 
@@ -83,7 +97,7 @@ class Trainer:
         pmanager = multiprocessing.Manager()
         mailbox = pmanager.Queue()
 
-        # workers starting training many One-vs-N SVM classifiers
+        # workers starting working on making svm units
         pool.map(make_svm_unit, create_packets(pairs, mailbox))
 
         # each time a worker returns the pickle path to the trained SVM unit
@@ -101,6 +115,12 @@ class Trainer:
 
     @timing
     def cross_validate(self, data=None, num_folds=10):
+        """
+        Split the training data into N folds. Use N-1 folds as training data
+        and 1 fold as the testing data during each iteration.
+
+        Outputs the confusion matrix and other accuracy measurement stats the end of N-CV.
+        """
         if data is None:
             data = self.data
         if len(data) < num_folds:
@@ -135,6 +155,9 @@ class Trainer:
         return self
 
     def __one_vs_one_predict__(self, X):
+        """
+        Predict a sample data's class by getting the major vote over all pairwise SMV units
+        """
         unit_preds = []
         n = len(X)
         for unit in self.svm_units:
@@ -144,6 +167,10 @@ class Trainer:
         return [Counter(unit_preds[:, i]).most_common(1)[0][0] for i in range(n)]
 
     def __one_vs_rest_predict__(self, X):
+        """
+        The class of a data point is whichever class has a decision
+        function with highest value, regardless of sign
+        """
         n = len(X)
         unit_margins = np.array([unit.svm.predict(X) for unit in self.svm_units])
         idx_max = [np.argmax(unit_margins[:, i]) for i in range(n)]
@@ -156,9 +183,6 @@ class Trainer:
         return predictions
 
     def predict(self, X):
-        """
-        cast projections over testing data using the major vote strategy
-        """
         return {
             'one_vs_one': self.__one_vs_one_predict__,
             'one_vs_rest': self.__one_vs_rest_predict__

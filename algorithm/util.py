@@ -24,6 +24,9 @@ def one_vs_rest_pairs(lst):
 
 
 def folds_indexes(df, num_folds):
+    """
+    get the indexes of dataframe splitted into N folds
+    """
     def chunkify(lst, n):
         return [lst[i::n] for i in range(n)]
 
@@ -49,6 +52,10 @@ def accuracy_score(predictions, real_values):
 # Decorators #
 ##############
 def setup_tmp(f):
+    """
+    Manages the lifetime of 'tmp' folder.
+    create at the beginning of function and remove when the function completes
+    """
     def handler(*args):
         tmp_dump = './tmp'
         if not os.path.exists(tmp_dump):
@@ -61,6 +68,9 @@ def setup_tmp(f):
 
 
 def timing(f):
+    """
+    Time the function execution
+    """
     def timmer(*args):
         start = time.time()
         ret = f(*args)
@@ -93,6 +103,9 @@ def poly(degree=3, offset=1e0):
 # Data pre-processing utilities #
 #################################
 def build_dataframe(source):
+    """
+    Read source csv and build a pandas dataframe
+    """
     # read source data, use the app name as index
     print('===== building data frame for {} ====='.format(os.path.basename(source)))
 
@@ -107,6 +120,10 @@ def build_dataframe(source):
 
 
 def make_training_data(training_path, labels_path):
+    """
+    Read training and labels source, use labels as dataframe index and
+    columns are tagged using prefix 't'.
+    """
     # read training and label data, use app name as index
     data = build_dataframe(training_path)
     print('===== making training data =====')
@@ -126,7 +143,7 @@ def make_training_data(training_path, labels_path):
 
 def feature_selection(training_dataframe, min_ig=0.0107036, use_cache=False):
     """
-    Compute information gain to remove redundant features.
+    Compute information gain and remove redundant features whose info gain values are below min_ig.
     Reference: [A survey of text classification algorithms](www.time.mk/trajkovski/thesis/text-class.pdf)
     """
     print('===== selecting usefull features [usecache={}] ====='.format(use_cache))
@@ -142,6 +159,9 @@ def feature_selection(training_dataframe, min_ig=0.0107036, use_cache=False):
 
 
 def read_info_gain(path='./information_gain_result.txt'):
+    """
+    Read pre-computed info gain values for training_data.csv
+    """
     import re
     with open(path, 'r') as source:
         features_ig = {}
@@ -156,7 +176,9 @@ def read_info_gain(path='./information_gain_result.txt'):
 
 
 def save_info_gain(result, path='./information_gain_result.txt'):
-    from operator import itemgetter
+    """
+    Save info gain values for training_data.csv to a local file
+    """
     pt = PrettyTable()
     pt.add_column('feature name', list(result.keys()))
     pt.add_column('information gain', list(result.values()))
@@ -169,15 +191,18 @@ def save_info_gain(result, path='./information_gain_result.txt'):
 
 @timing
 def compute_info_gains(training_dataframe, save=False):
+    """
+     Compute info gain value for each of the training data feature (13627 unique words)
+    """
     def entropy(vals):
         if len(vals) == 0:
             return 0.0
-        # preprocessing - convert nonimal to numeral so the efficient bincount can be used
+        # preprocessing - convert nominal to numeral so the efficient bincount can be used
         cnt = Counter(vals)
         for i, k in enumerate(cnt.keys()):
             cnt[k] = i
         trans = np.vectorize(lambda kls: cnt[kls])(vals)
-        # begin
+        # count occurrences
         x = np.atleast_2d(trans)
         nrows, ncols = x.shape
         nbins = x.max() + 1
