@@ -43,9 +43,9 @@ class ConfusionMatrix:
 
     def save(self, folder):
         # Save confusion matrix
-        self.cm.to_csv(os.join(folder, 'confusion_matrix.txt'))
+        self.cm.to_csv(os.path.join(folder, 'confusion_matrix.txt'))
         # Save detailed stats summary
-        with open(os.join(folder, 'accuracy_measurements.txt'), 'w+') as outfile:
+        with open(os.path.join(folder, 'accuracy_measurements.txt'), 'w+') as outfile:
             outfile.write(self.statistics())
 
 

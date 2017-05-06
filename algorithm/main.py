@@ -6,7 +6,7 @@ from trainer import Trainer
 
 def read_small_data():
     source = '../input-dev/subset_5kls.csv'
-    # source = '../input-dev/dev-data.csv'
+    #source = '../input-dev/dev-data.csv'
     return pd.read_csv(source, index_col=0), None
 
 
