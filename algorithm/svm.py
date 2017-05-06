@@ -1,9 +1,10 @@
+from __future__ import print_function
+from __future__ import division
 from util import linear
 from cvxopt import matrix as cvmat
 from cvxopt.solvers import qp, options
 from util import kernel_function
 import numpy as np
-import pickle
 
 options['show_progress'] = False  # less verbose
 

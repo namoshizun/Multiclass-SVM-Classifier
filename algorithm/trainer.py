@@ -2,17 +2,17 @@ from __future__ import print_function
 from __future__ import division
 import numpy as np
 import itertools, os
-import cPickle as pickle
 import multiprocessing
 import util
-from collections import Counter
 from Queue import Empty
+from collections import Counter
 from svm import SVM
-from evaluator import ClassifierEvaluator
-from util import timing, setup_tmp, chunkify, one_vs_one_pairs, one_vs_rest_pairs
+from confusion_matrix import ConfusionMatrix
+from util import timing, setup_tmp, one_vs_one_pairs, one_vs_rest_pairs
+from util import folds_indexes, accuracy_score
 
 
-num_cpus = int(multiprocessing.cpu_count() / 2 )
+num_cpus = int(multiprocessing.cpu_count() / 2)
 
 
 def make_svm_unit(params):
@@ -49,7 +49,6 @@ class Trainer:
         self.data = data
         self.config = config
         self.svm_units = []
-        self.evaluator = ClassifierEvaluator
 
     @setup_tmp
     @timing
@@ -104,28 +103,35 @@ class Trainer:
     def cross_validate(self, data=None, num_folds=10):
         if data is None:
             data = self.data
+        if len(data) < num_folds:
+            raise ValueError('Not enough data to make {} folds'.format(num_folds))
 
-        num_folds = min(len(data), num_folds)
-        folds_idx = chunkify(range(len(data)), num_folds)
+        folds = folds_indexes(data, num_folds)
         folds_accuracy = []
+        cm = ConfusionMatrix(np.unique(data.index.values))
 
-        tmp = set(range(num_folds))
-        for i in tmp:
+        for i, (train_idx, test_idx) in enumerate(folds):
+            # find the indexes of other folds data in the dataframe
             print('Fold {}'.format(i))
-            other_folds = list(tmp - set([i]))
-            other_folds_pos = list(itertools.chain.from_iterable([folds_idx[j] for j in other_folds]))
-
-            training_data = data.iloc[other_folds_pos]
-            test_data = data.iloc[folds_idx[i]]
-
+            training_data = data.iloc[train_idx]
+            test_data = data.iloc[test_idx]
             self.train(training_data)
-            accuracy = self.evaluator.accuracy_score(self.predict(test_data.values), test_data.index.values)
-            self.svm_units = []
-            
-            print(accuracy)
+            # predict and evaluate
+            predictions = self.predict(test_data.values)
+            real_vals = test_data.index.values
+            accuracy = accuracy_score(predictions, real_vals)
+            cm.update(predictions, real_vals)
+            # clean up
             folds_accuracy.append(accuracy)
+            self.svm_units = []
+            print(accuracy)
 
         print('Mean Accuracy : {}'.format(np.mean(folds_accuracy)))
+        print('***** Detailed Summary *****')
+        print(cm.statistics())
+        print('***** Confusion Matrix *****')
+        print(cm)
+        cm.save(folder='../experiments/')
         return self
 
     def __one_vs_one_predict__(self, X):
