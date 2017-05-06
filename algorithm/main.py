@@ -31,9 +31,9 @@ def read_full_data():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='SVM Classifier')
-    parser.add_argument('kernel', nargs='?', type=str, default='linear',
+    parser.add_argument('kernel', nargs='?', type=str, default='linear', choices=['linear', 'poly'],
                         help='The kernel function to use')
-    parser.add_argument('strategy', nargs='?', type=str, default='one_vs_one',
+    parser.add_argument('strategy', nargs='?', type=str, default='one_vs_one', choices=['one_vs_one', 'one_vs_rest'],
                         help='The strategy to implement a multiclass SVM. Choose "one_vs_one" or "one_vs_rest"')
     parser.add_argument('C', nargs='?', type=float, default=1.0,
                         help='The regularization parameter that trades off margin size and training error')
@@ -41,14 +41,25 @@ if __name__ == '__main__':
                         help='The support vector\'s minimum Lagrange multipliers value')
     parser.add_argument('cross_validate', nargs='?', type=bool, default=False,
                         help='Whether or not to cross validate SVM')
+    parser.add_argument('mode', nargs='?', type=str, default='prod', choices=['dev', 'prod'],
+                        help='Reads dev data in ../input-dev/ if set to dev mode, otherwise looks for datasets in ../input/')
     config = vars(parser.parse_args())
+    svm_params = {k: config[k] for k in ('kernel', 'strategy', 'C', 'min_lagmult')}
 
-    training_data, test = read_full_data()
-    trainer = Trainer(training_data, config)
+
+    # config['mode'] = 'dev'
+    # config['cross_validate'] = True
+
+    if config['mode'] == 'dev':
+        training_data, test_data = read_dev_data()
+    elif config['mode'] == 'prod':
+        training_data, test_data = read_full_data()
+
+    trainer = Trainer(training_data, svm_params)
 
     if config['cross_validate']:
         trainer.cross_validate()
     else:
         trainer.train()
-        predictions = trainer.predict(test.values)
+        predictions = trainer.predict(test_data.values)
         # TODO

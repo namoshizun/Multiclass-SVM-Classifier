@@ -83,7 +83,7 @@ def timing(f):
 ####################
 # Kernel Utilities #
 ####################
-def kernel_function(name):
+def kernel_function(name, degree=3, offset=1e0):
     return {
         'linear': linear,
         'poly': poly
@@ -94,10 +94,8 @@ def linear(x, y):
     return np.dot(x, y)
 
 
-def poly(degree=3, offset=1e0):
-    def kernel(x, y):
-        return (offset + np.dot(x, y)) ** degree
-    return kernel
+def poly(x, y):
+    return (1e0 + np.dot(x, y)) ** 3
 
 #################################
 # Data pre-processing utilities #
@@ -158,37 +156,6 @@ def feature_selection(training_dataframe, min_ig=0.0107036, use_cache=False):
     training_dataframe.drop(redundant_features, axis=1, inplace=True)
 
 
-def read_info_gain(path='./information_gain_result.txt'):
-    """
-    Read pre-computed info gain values for training_data.csv
-    """
-    import re
-    with open(path, 'r') as source:
-        features_ig = {}
-        regex=re.compile(r'^|\s+\w+\s+|\s+\d+\.\d+\s+|$')
-        lines = source.read().splitlines()[3:]
-        for ln in lines:
-            parts = regex.findall(ln)
-            if len(parts) != 4: continue
-            features_ig[parts[1].strip()] = float(parts[2].strip())
-
-        return features_ig
-
-
-def save_info_gain(result, path='./information_gain_result.txt'):
-    """
-    Save info gain values for training_data.csv to a local file
-    """
-    pt = PrettyTable()
-    pt.add_column('feature name', list(result.keys()))
-    pt.add_column('information gain', list(result.values()))
-    pt.reversesort = True
-    pt.sortby = 'information gain'
-
-    with open(path, 'w+') as thefile:
-        thefile.write(pt.get_string())
-
-
 @timing
 def compute_info_gains(training_dataframe, save=False):
     """
@@ -227,3 +194,34 @@ def compute_info_gains(training_dataframe, save=False):
     if save:
         save_info_gain(word_ig)
     return word_ig
+
+
+def read_info_gain(path='./information_gain_result.txt'):
+    """
+    Read pre-computed info gain values for training_data.csv
+    """
+    import re
+    with open(path, 'r') as source:
+        features_ig = {}
+        regex=re.compile(r'^|\s+\w+\s+|\s+\d+\.\d+\s+|$')
+        lines = source.read().splitlines()[3:]
+        for ln in lines:
+            parts = regex.findall(ln)
+            if len(parts) != 4: continue
+            features_ig[parts[1].strip()] = float(parts[2].strip())
+
+        return features_ig
+
+
+def save_info_gain(result, path='./information_gain_result.txt'):
+    """
+    Save info gain values for training_data.csv to a local file
+    """
+    pt = PrettyTable()
+    pt.add_column('feature name', list(result.keys()))
+    pt.add_column('information gain', list(result.values()))
+    pt.reversesort = True
+    pt.sortby = 'information gain'
+
+    with open(path, 'w+') as thefile:
+        thefile.write(pt.get_string())

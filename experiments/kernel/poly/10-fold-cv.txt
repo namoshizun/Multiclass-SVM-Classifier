@@ -1,0 +1,49 @@
+C = 1.0
+Min_Lagval = 1e-5
+# Features = 750
+
+==== 10 Fold Cross Validation ====
+
+Fold 0
+done
+train function took 170.078 s
+0.601690701144
+Fold 1
+done
+train function took 176.882 s
+0.636499254102
+Fold 2
+done
+train function took 168.136 s
+0.622575832919
+Fold 3
+done
+train function took 170.215 s
+0.616111387369
+Fold 4
+done
+train function took 168.377 s
+0.619402985075
+Fold 5
+done
+train function took 169.035 s
+0.614925373134
+Fold 6
+done
+train function took 169.484 s
+0.603980099502
+Fold 7
+done
+train function took 167.753 s
+0.626865671642
+Fold 8
+done
+train function took 169.413 s
+0.605970149254
+Fold 9
+done
+train function took 168.932 s
+0.618407960199
+
+--------------------------
+Mean Accuracy : 0.616642941434
