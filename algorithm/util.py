@@ -86,7 +86,8 @@ def timing(f):
 def kernel_function(name, degree=3, offset=1e0):
     return {
         'linear': linear,
-        'poly': poly
+        'poly': poly,
+        'rbf': rbf
     }.get(name, linear)
 
 
@@ -95,7 +96,15 @@ def linear(x, y):
 
 
 def poly(x, y):
+    # default degree = 3., default offset = 1e0
     return (1e0 + np.dot(x, y)) ** 3
+
+
+def rbf(x, y):
+    # deprecated. no enough time to implement
+    # default sigma = 5.0
+    return np.exp(-np.linalg.norm(x-y)**2 / (2 * (5.0 ** 2)))
+
 
 #################################
 # Data pre-processing utilities #

@@ -29,9 +29,14 @@ def read_full_data():
     return training_data, test
 
 
+def save_predictions(predictions, test_data):
+    df = pd.DataFrame(predictions, index=test_data.index)
+    df.to_csv('../output/predicted_labels.csv', header=None)
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='SVM Classifier')
-    parser.add_argument('kernel', nargs='?', type=str, default='linear', choices=['linear', 'poly'],
+    parser.add_argument('kernel', nargs='?', type=str, default='poly', choices=['linear', 'poly'],
                         help='The kernel function to use')
     parser.add_argument('strategy', nargs='?', type=str, default='one_vs_one', choices=['one_vs_one', 'one_vs_rest'],
                         help='The strategy to implement a multiclass SVM. Choose "one_vs_one" or "one_vs_rest"')
@@ -46,10 +51,6 @@ if __name__ == '__main__':
     config = vars(parser.parse_args())
     svm_params = {k: config[k] for k in ('kernel', 'strategy', 'C', 'min_lagmult')}
 
-
-    # config['mode'] = 'dev'
-    # config['cross_validate'] = True
-
     if config['mode'] == 'dev':
         training_data, test_data = read_dev_data()
     elif config['mode'] == 'prod':
@@ -62,4 +63,4 @@ if __name__ == '__main__':
     else:
         trainer.train()
         predictions = trainer.predict(test_data.values)
-        # TODO
+        save_predictions(predictions, test_data)
