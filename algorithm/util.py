@@ -3,9 +3,8 @@ import pandas as pd
 import numpy as np
 import os, time, shutil
 from collections import Counter, defaultdict
-from numba import jit
 from prettytable import PrettyTable
-
+from functools import reduce
 
 ##################
 # MISC Utilities #
@@ -24,10 +23,31 @@ def one_vs_rest_pairs(lst):
     return [([e], lst[:i] + lst[i + 1:]) for i, e in enumerate(lst)]
 
 
-def chunkify(lst, n):
-    return [lst[i::n] for i in range(n)]
+def folds_indexes(df, num_folds):
+    def chunkify(lst, n):
+        return [lst[i::n] for i in range(n)]
+
+    folds_idx = []
+    chunks_idx = chunkify(list(range(len(df))), num_folds)
+    tmp = set(list(range(num_folds)))
+
+    for i in tmp:
+        other_folds = list(tmp - set([i]))
+        other_folds_pos = list(itertools.chain.from_iterable([chunks_idx[j] for j in other_folds]))
+        folds_idx.append((other_folds_pos, chunks_idx[i]))
+
+    return folds_idx
 
 
+def accuracy_score(predictions, real_values):
+    assert(len(predictions) == len(real_values))
+    matches = reduce(lambda good, curr: good + int(curr[0] == curr[1]), zip(predictions, real_values), 0)
+    return matches / len(predictions)
+
+
+##############
+# Decorators #
+##############
 def setup_tmp(f):
     def handler(*args):
         tmp_dump = './tmp'

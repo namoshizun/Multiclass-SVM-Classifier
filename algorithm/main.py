@@ -6,6 +6,7 @@ from trainer import Trainer
 
 def read_small_data():
     source = '../input-dev/subset_5kls.csv'
+    # source = '../input-dev/dev-data.csv'
     return pd.read_csv(source, index_col=0), None
 
 
@@ -26,7 +27,7 @@ if __name__ == '__main__':
     # RECEIVE CONFIG
     parser = argparse.ArgumentParser(description='SVM Classifier')
     parser.add_argument('kernel', nargs='?', type=str, default='linear', help='The kernel function to use')
-    parser.add_argument('strategy', nargs='?', type=str, default='one_vs_rest', help='The strategy to implement a multiclass SVM. Choose "one_vs_one" or "one_vs_rest"')
+    parser.add_argument('strategy', nargs='?', type=str, default='one_vs_one', help='The strategy to implement a multiclass SVM. Choose "one_vs_one" or "one_vs_rest"')
     parser.add_argument('C', nargs='?', type=float, default=1.0, help='The penalty constant C value')
     parser.add_argument('min_lagmult', nargs='?', type=float, default=1e-5,
                         help='The support vector\'s minimum lagrange multipliers value')
