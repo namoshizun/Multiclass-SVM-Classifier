@@ -1,43 +1,43 @@
 Fold 0
 done
-train function took 6.092 s
-0.694822888283
+train function took 6.521 s
+0.716621253406
 Fold 1
 done
-train function took 6.091 s
-0.697547683924
+train function took 6.593 s
+0.711171662125
 Fold 2
 done
-train function took 6.599 s
-0.67029972752
+train function took 6.689 s
+0.66757493188
 Fold 3
 done
-train function took 6.330 s
-0.669398907104
+train function took 6.501 s
+0.674863387978
 Fold 4
 done
-train function took 6.596 s
-0.696721311475
+train function took 6.696 s
+0.72131147541
 Fold 5
 done
-train function took 6.498 s
-0.718579234973
+train function took 7.396 s
+0.699453551913
 Fold 6
 done
-train function took 6.517 s
-0.674863387978
+train function took 6.823 s
+0.68306010929
 Fold 7
 done
-train function took 6.601 s
-0.704918032787
+train function took 7.016 s
+0.713114754098
 Fold 8
 done
-train function took 6.804 s
-0.680327868852
+train function took 6.498 s
+0.677595628415
 Fold 9
 done
-train function took 6.805 s
-0.685792349727
+train function took 6.598 s
+0.699453551913
 
 
-Mean Accuracy : 0.689327139262
+Mean Accuracy : 0.696422030643
