@@ -1,0 +1,42 @@
+Fold 0
+done
+train function took 87.394 s
+0.702997275204
+Fold 1
+done
+train function took 88.388 s
+0.694822888283
+Fold 2
+done
+train function took 89.085 s
+0.673024523161
+Fold 3
+done
+train function took 87.346 s
+0.658469945355
+Fold 4
+done
+train function took 85.547 s
+0.732240437158
+Fold 5
+done
+train function took 86.772 s
+0.713114754098
+Fold 6
+done
+train function took 86.992 s
+0.68306010929
+Fold 7
+done
+train function took 90.236 s
+0.710382513661
+Fold 8
+done
+train function took 85.107 s
+0.685792349727
+Fold 9
+done
+train function took 88.750 s
+0.68306010929
+
+Mean Accuracy : 0.693696490523
