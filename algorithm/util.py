@@ -71,9 +71,9 @@ def timing(f):
     """
     Time the function execution
     """
-    def timmer(*args):
+    def timmer(*args, **kwargs):
         start = time.time()
-        ret = f(*args)
+        ret = f(*args, **kwargs)
         finish = time.time()
         print('%s function took %0.3f s' % (f.__name__, (finish-start)))
         return ret

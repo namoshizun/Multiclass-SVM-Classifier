@@ -14,7 +14,7 @@ def read_dev_data():
     return pd.read_csv(source, index_col=0), None
 
 
-def read_full_data():
+def read_full_data(evaluate_features=False):
     """
     Read from the original assignment data and perform data pre-processing
     """
@@ -23,10 +23,11 @@ def read_full_data():
     test_data = '../input/test_data.csv'
 
     training_data = make_training_data(training_data, training_labels)
-    test = build_dataframe(test_data)
-    feature_selection(training_data, use_cache=True)
+    test_data = build_dataframe(test_data)
+    feature_selection(training_data, use_cache=not evaluate_features)
+    feature_selection(test_data, use_cache=not evaluate_features)
 
-    return training_data, test
+    return training_data, test_data
 
 
 def save_predictions(predictions, test_data):
@@ -46,21 +47,28 @@ if __name__ == '__main__':
                         help='The support vector\'s minimum Lagrange multipliers value')
     parser.add_argument('cross_validate', nargs='?', type=bool, default=False,
                         help='Whether or not to cross validate SVM')
+    parser.add_argument('evaluate_features', nargs='?', type=bool, default=False,
+                        help='Will read the cache of feature evaluation results if set to False')
     parser.add_argument('mode', nargs='?', type=str, default='prod', choices=['dev', 'prod'],
                         help='Reads dev data in ../input-dev/ if set to dev mode, otherwise looks for datasets in ../input/')
     config = vars(parser.parse_args())
     svm_params = {k: config[k] for k in ('kernel', 'strategy', 'C', 'min_lagmult')}
 
+
     if config['mode'] == 'dev':
         training_data, test_data = read_dev_data()
     elif config['mode'] == 'prod':
-        training_data, test_data = read_full_data()
+        training_data, test_data = read_full_data(config['evaluate_features'])
+
 
     trainer = Trainer(training_data, svm_params)
+
 
     if config['cross_validate']:
         trainer.cross_validate()
     else:
+        print('===== training SVM units =====')
         trainer.train()
+        print('===== predicting test data =====')
         predictions = trainer.predict(test_data.values)
         save_predictions(predictions, test_data)

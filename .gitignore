@@ -3,6 +3,7 @@
 \#*
 .idea/
 !confusion_matrix.csv
+!predicted_labels.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
