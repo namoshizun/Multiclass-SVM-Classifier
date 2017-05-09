@@ -63,8 +63,8 @@ class SVM:
             s.t, 0 <= a_i <= C, for i = 1~N
             and  \sum_i(a_iy_i) = 0
 
-        :param X: training data as np.matrix
-        :param Y: training labels as np.matrix
+        :param X: training data as np.ndarray
+        :param Y: training labels as np.ndarray
         :return:
         """
         kernel = self.kernel
