@@ -19,11 +19,11 @@ The source code in master branch depends on Python3.5. You may switch to "python
 **Usage**:
 
 ```
-
 usage: main.py [-h]
                [{linear,poly}] [{one_vs_one,one_vs_rest}] [C] [min_lagmult]
-               [cross_validate] [{dev,prod}]
+               [cross_validate] [evaluate_features] [{dev,prod}]
 
+SVM Classifier
 
 positional arguments:
   {linear,poly}         The kernel function to use
@@ -35,17 +35,19 @@ positional arguments:
   min_lagmult           The support vector's minimum Lagrange multipliers
                         value
   cross_validate        Whether or not to cross validate SVM
+  evaluate_features     Will read the cache of feature evaluation results if
+                        set to False
   {dev,prod}            Reads dev data in ../input-dev/ if set to dev mode,
                         otherwise looks for datasets in ../input/
+
 optional arguments:
   -h, --help            show this help message and exit
-
 ```
 
 **Example Usage**:
 
 > python main.py
 
-The program will load the training and testing datasets in ../input/, trains SVM using default params, and saves the predictions of testing dataset into ../output/:
+The program will load the training and testing datasets in ../input/, perform feature selection without re-computing the feature information gains, trains SVM using C= 1.0, polynomial kernel and One-vs-One strategy. It then saves the predictions of testing dataset into ../output/:
 
 ### 

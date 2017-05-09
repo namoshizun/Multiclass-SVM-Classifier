@@ -148,21 +148,16 @@ def make_training_data(training_path, labels_path):
     return data
 
 
-def feature_selection(training_dataframe, min_ig=0.0107036, use_cache=False):
+def feature_selection(dataframe, features_ig, min_ig=0.0107036):
     """
     Compute information gain and remove redundant features whose info gain values are below min_ig.
     Reference: [A survey of text classification algorithms](www.time.mk/trajkovski/thesis/text-class.pdf)
     """
     print('===== selecting usefull features [usecache={}] ====='.format(use_cache))
-    features = training_dataframe.columns
-    if use_cache:
-        features_ig = read_info_gain()
-    else:
-        features_ig = compute_info_gains(training_dataframe, save=True)
-
+    features = dataframe.columns
     selected_features = [ft for ft, ig in features_ig.items() if ig >= min_ig]
     redundant_features = list(set(features) - set(selected_features))
-    training_dataframe.drop(redundant_features, axis=1, inplace=True)
+    dataframe.drop(redundant_features, axis=1, inplace=True)
 
 
 @timing

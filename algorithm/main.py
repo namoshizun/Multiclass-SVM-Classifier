@@ -1,6 +1,7 @@
 import argparse
 import pandas as pd
 from util import build_dataframe, make_training_data, feature_selection
+from util import read_info_gain, compute_info_gains
 from trainer import Trainer
 
 
@@ -24,8 +25,14 @@ def read_full_data(evaluate_features=False):
 
     training_data = make_training_data(training_data, training_labels)
     test_data = build_dataframe(test_data)
-    feature_selection(training_data, use_cache=not evaluate_features)
-    feature_selection(test_data, use_cache=not evaluate_features)
+
+    if evaluate_features:
+        feature_ig = compute_info_gains(training_data, save=True)
+    else:
+        feature_ig = read_info_gain()
+
+    feature_selection(training_data, feature_ig)
+    feature_selection(test_data, feature_ig)
 
     return training_data, test_data
 
