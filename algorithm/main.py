@@ -27,10 +27,12 @@ def read_full_data(evaluate_features=False):
     test_data = build_dataframe(test_data)
 
     if evaluate_features:
+        print('***** recomputing infor gain *****')
         feature_ig = compute_info_gains(training_data, save=True)
     else:
+        print('***** reading cached info gain *****')
         feature_ig = read_info_gain()
-
+    print('===== selecting usefull features =====')
     feature_selection(training_data, feature_ig)
     feature_selection(test_data, feature_ig)
 
